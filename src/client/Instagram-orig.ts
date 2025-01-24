@@ -10,8 +10,6 @@ import logger from "../config/logger";
 import { Instagram_cookiesExist, loadCookies, saveCookies } from "../utils";
 import { runAgent } from "../Agent";
 import { getInstagramCommentSchema } from "../Agent/schema";
-import {setTimeout} from "node:timers/promises";
-
 
 // Add stealth plugin to puppeteer
 puppeteer.use(StealthPlugin());
@@ -99,7 +97,7 @@ const loginWithCredentials = async (page: any, browser: Browser) => {
 
 async function interactWithPosts(page: any) {
     let postIndex = 1; // Start with the first post
-    const maxPosts = 30; // Limit to prevent infinite scrolling
+    const maxPosts = 50; // Limit to prevent infinite scrolling
 
     while (postIndex <= maxPosts) {
         try {
@@ -111,7 +109,7 @@ async function interactWithPosts(page: any) {
                 break;
             }
 
-           /*  const likeButtonSelector = `${postSelector} svg[aria-label="Like"]`;
+            const likeButtonSelector = `${postSelector} svg[aria-label="Like"]`;
             const likeButton = await page.$(likeButtonSelector);
             const ariaLabel = await likeButton?.evaluate((el: Element) =>
                 el.getAttribute("aria-label")
@@ -119,35 +117,10 @@ async function interactWithPosts(page: any) {
 
             if (ariaLabel === "Like") {
                 console.log(`Liking post ${postIndex}...`);
-                console.log(likeButton);
                 await likeButton.click();
                 console.log(`Post ${postIndex} liked.`);
             } else if (ariaLabel === "Unlike") {
                 console.log(`Post ${postIndex} is already liked.`);
-            } else {
-                console.log(`Like button not found for post ${postIndex}.`);
-            } */
-
-            const likeButtonSelector = `${postSelector} svg[aria-label="Like"]`;
-            const likeButton = await page.$(likeButtonSelector);
-
-            if (likeButton) {
-                try {
-                    const ariaLabel = await likeButton.evaluate((el:Element) => el.getAttribute("aria-label") || "unknown");
-                    
-                    if (ariaLabel === "Like") {
-                        console.log(`Liking post ${postIndex}...`);
-                        await likeButton.click();
-                        await page.keyboard.press("Enter");
-                        console.log(`Post ${postIndex} liked.`);
-                    } else if (ariaLabel === "Unlike") {
-                        console.log(`Post ${postIndex} is already liked.`);
-                    } else {
-                        console.log(`Unexpected aria-label for like button on post ${postIndex}: ${ariaLabel}`);
-                    }
-                } catch (error) {
-                    console.error(`Error interacting with like button for post ${postIndex}:`, error);
-                }
             } else {
                 console.log(`Like button not found for post ${postIndex}.`);
             }
@@ -186,35 +159,12 @@ async function interactWithPosts(page: any) {
                 console.log(`Commenting on post ${postIndex}...`);
                 const prompt = `Craft a thoughtful, engaging, and mature reply to the following post: "${caption}". Ensure the reply is relevant, insightful, and adds value to the conversation. It should reflect empathy and professionalism, and avoid sounding too casual or superficial. also it should be 300 characters or less. and it should not go against instagram Community Standards on spam. so you will have to try your best to humanize the reply`;
                 const schema = getInstagramCommentSchema();
-                console.log('Got Schema');
-                const comment = await runAgent(schema, prompt); // Pass the updated caption
-                console.log('Got Comment');
-                console.log(commentBox);
+                const result = await runAgent(schema, prompt); // Pass the updated caption
+                const comment = result[0]?.comment;
+                await commentBox.type(comment); // Replace with random comment
 
-                console.log('Typing');
-                if (typeof comment === 'string' && comment.length > 0) {
-                    await commentBox.type(comment, { delay: 50 }); // Add delay for realism
-                } else {
-                    console.error('Comment is not a valid string:', comment);
-                    await commentBox.type(JSON.stringify(comment[0]).slice(12,-40), { delay: 50 });
-                }
-
-/*                 const postButtonSelector = `${postSelector} div[role="button"]:not([disabled]):[aria-label*="Post"]`;
-                console.log(postButtonSelector);
-
-                await page.waitForSelector(postButtonSelector,{visible:true});
-                console.log('postButtonSelector');
-
+                const postButtonSelector = `${postSelector} div[role="button"]:not([disabled]):has-text("Post")`;
                 const postButton = await page.$(postButtonSelector);
-                await page.waitForSelector(postButton,{visible:true});
-                console.log('postButton'); */
-
-                const postButton = await page.evaluateHandle(() => {
-                    const buttons = Array.from(document.querySelectorAll('div[role="button"]'));
-                    return buttons.find(button => button.textContent === 'Post' && !button.hasAttribute('disabled'));
-                });
-
-
                 if (postButton) {
                     console.log(`Posting comment on post ${postIndex}...`);
                     await postButton.click();
@@ -231,9 +181,7 @@ async function interactWithPosts(page: any) {
             console.log(
                 `Waiting ${delay / 1000} seconds before moving to the next post...`
             );
-            //await page.waitForTimeout(delay);
-            await setTimeout(delay);
-
+            await page.waitForTimeout(delay);
 
             // Scroll to the next post
             await page.evaluate(() => {
