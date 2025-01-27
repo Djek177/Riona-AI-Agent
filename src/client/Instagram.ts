@@ -1,4 +1,3 @@
-
 import { Browser, DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
@@ -22,6 +21,7 @@ puppeteer.use(
     })
 );
 
+//const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function runInstagram() {
     const server = new Server({ port: 8000 });
@@ -121,6 +121,7 @@ async function interactWithPosts(page: any) {
                 console.log(`Liking post ${postIndex}...`);
                 console.log(likeButton);
                 await likeButton.click();
+                await page.keyboard.press("Enter");
                 console.log(`Post ${postIndex} liked.`);
             } else if (ariaLabel === "Unlike") {
                 console.log(`Post ${postIndex} is already liked.`);
@@ -199,21 +200,17 @@ async function interactWithPosts(page: any) {
                     await commentBox.type(JSON.stringify(comment[0]).slice(12,-40), { delay: 50 });
                 }
 
-/*                 const postButtonSelector = `${postSelector} div[role="button"]:not([disabled]):[aria-label*="Post"]`;
+                const postButtonSelector = `${postSelector} div[role="button"]:not([disabled]):[aria-label*="Post"]`;
                 console.log(postButtonSelector);
 
                 await page.waitForSelector(postButtonSelector,{visible:true});
                 console.log('postButtonSelector');
 
-                const postButton = await page.$(postButtonSelector);
-                await page.waitForSelector(postButton,{visible:true});
-                console.log('postButton'); */
-
+                // New selector approach for the post button
                 const postButton = await page.evaluateHandle(() => {
                     const buttons = Array.from(document.querySelectorAll('div[role="button"]'));
                     return buttons.find(button => button.textContent === 'Post' && !button.hasAttribute('disabled'));
                 });
-
 
                 if (postButton) {
                     console.log(`Posting comment on post ${postIndex}...`);
@@ -226,14 +223,12 @@ async function interactWithPosts(page: any) {
                 console.log("Comment box not found.");
             }
 
-            // Wait before moving to the next post (randomize between 5 and 10 seconds)
-            const delay = Math.floor(Math.random() * 5000) + 5000; // Random delay between 5 and 10 seconds
+            // Replace the waitForTimeout with our delay function
+            const waitTime = Math.floor(Math.random() * 5000) + 5000;
             console.log(
-                `Waiting ${delay / 1000} seconds before moving to the next post...`
+                `Waiting ${waitTime / 1000} seconds before moving to the next post...`
             );
-            //await page.waitForTimeout(delay);
-            await setTimeout(delay);
-
+            await delay(waitTime);
 
             // Scroll to the next post
             await page.evaluate(() => {
