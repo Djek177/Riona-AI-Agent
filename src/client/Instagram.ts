@@ -45,7 +45,6 @@ async function runInstagram() {
 
         // Navigate to Instagram to verify if cookies are valid
         await page.goto("https://www.instagram.com/", { waitUntil: 'networkidle2' });
-
         // Check if login was successful by verifying page content (e.g., user profile or feed)
         const isLoggedIn = await page.$("a[href='/direct/inbox/']");
         if (isLoggedIn) {
@@ -200,11 +199,11 @@ async function interactWithPosts(page: any) {
                     await commentBox.type(JSON.stringify(comment[0]).slice(12,-40), { delay: 50 });
                 }
 
-                const postButtonSelector = `${postSelector} div[role="button"]:not([disabled]):[aria-label*="Post"]`;
+/*                 const postButtonSelector = `${postSelector} div[role="button"]:not([disabled]):[aria-label*="Post"]`;
                 console.log(postButtonSelector);
 
                 await page.waitForSelector(postButtonSelector,{visible:true});
-                console.log('postButtonSelector');
+                console.log('postButtonSelector'); */
 
                 // New selector approach for the post button
                 const postButton = await page.evaluateHandle(() => {
@@ -223,12 +222,15 @@ async function interactWithPosts(page: any) {
                 console.log("Comment box not found.");
             }
 
-            // Replace the waitForTimeout with our delay function
-            const waitTime = Math.floor(Math.random() * 5000) + 5000;
+            // Replace the waitForTimeout with our delay function            
+            const delay = Math.floor(Math.random() * 10000) + 10000; // Random delay between 5 and 10 seconds
+            //const waitTime = Math.floor(Math.random() * 10000) + 10000;
             console.log(
-                `Waiting ${waitTime / 1000} seconds before moving to the next post...`
+                `Waiting ${delay / 1000} seconds before moving to the next post...`
             );
-            await delay(waitTime);
+            //await delay(waitTime);
+            await setTimeout(delay);
+
 
             // Scroll to the next post
             await page.evaluate(() => {
